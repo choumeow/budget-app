@@ -10,32 +10,19 @@
  */
 
 /* ── Default Categories ──────────────────────────────── */
-// Bump this version string whenever DEFAULT_CATEGORIES changes.
-// All existing users will have their categories reset to the new defaults
-// while their transaction history is preserved.
-const DATA_VERSION = "2";
-
 const DEFAULT_CATEGORIES = [
-  // ── Monthly Renew ──────────────────────────────────────
-  { id: "cat_meal",        name: "Meal",           icon: "🍜", color: "#FF6B6B", budgetAmount: 300,  renewalType: "renew"   },
-  { id: "cat_ingredient",  name: "Ingredient",     icon: "🛒", color: "#FF8E53", budgetAmount: 200,  renewalType: "renew"   },
-  { id: "cat_patron",      name: "Patron",         icon: "🎭", color: "#9B59B6", budgetAmount: 75,   renewalType: "renew"   },
-  { id: "cat_entertain",   name: "Entertainment",  icon: "🎬", color: "#45B7D1", budgetAmount: 200,  renewalType: "renew"   },
-  { id: "cat_rental",      name: "Rental",         icon: "🏠", color: "#6C5CE7", budgetAmount: 600,  renewalType: "renew"   },
-  { id: "cat_medcard",     name: "Medical Card",   icon: "🏥", color: "#00B894", budgetAmount: 250,  renewalType: "renew"   },
-  { id: "cat_ptptn",       name: "PTPTN",          icon: "📚", color: "#FDCB6E", budgetAmount: 250,  renewalType: "renew"   },
-  // ── Bring Forward ──────────────────────────────────────
-  { id: "cat_pet",         name: "Pet",            icon: "🐾", color: "#85C1E9", budgetAmount: 50,   renewalType: "forward" },
-  { id: "cat_daily",       name: "Daily Product",  icon: "🧴", color: "#4ECDC4", budgetAmount: 75,   renewalType: "forward" },
-  { id: "cat_gift",        name: "Gift",           icon: "🎁", color: "#FD79A8", budgetAmount: 100,  renewalType: "forward" },
-  { id: "cat_medical",     name: "Medical",        icon: "💊", color: "#96CEB4", budgetAmount: 30,   renewalType: "forward" },
-  { id: "cat_phone",       name: "Phone Bill",     icon: "📱", color: "#74B9FF", budgetAmount: 10,   renewalType: "forward" },
-  { id: "cat_cloth",       name: "Cloth",          icon: "👗", color: "#F1948A", budgetAmount: 30,   renewalType: "forward" },
-  { id: "cat_makeup",      name: "Makeup Product", icon: "💄", color: "#E84393", budgetAmount: 30,   renewalType: "forward" },
-  { id: "cat_snack",       name: "Snack",          icon: "🍿", color: "#FFEAA7", budgetAmount: 50,   renewalType: "forward" },
-  // ── Saving (bring forward — balance accumulates) ───────
-  { id: "cat_saving",      name: "Normal Saving",  icon: "💰", color: "#00B894", budgetAmount: 400,  renewalType: "forward" },
-  { id: "cat_invest",      name: "Investment",     icon: "📈", color: "#0984E3", budgetAmount: 300,  renewalType: "forward" },
+  { id: "cat_food",       name: "Food & Dining",    icon: "🍜", color: "#FF6B6B", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_transport",  name: "Transport",        icon: "�", color: "#4ECDC4", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_shopping",   name: "Shopping",         icon: "🛍️", color: "#45B7D1", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_entertain",  name: "Entertainment",    icon: "🎬", color: "#96CEB4", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_health",     name: "Health",           icon: "💊", color: "#FFEAA7", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_housing",    name: "Housing",          icon: "🏠", color: "#DDA0DD", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_utilities",  name: "Utilities",        icon: "�", color: "#98D8C8", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_education",  name: "Education",        icon: "📚", color: "#F7DC6F", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_travel",     name: "Travel",           icon: "✈️", color: "#BB8FCE", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_pets",       name: "Pets",             icon: "�", color: "#85C1E9", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_personal",   name: "Personal Care",    icon: "💆", color: "#F1948A", budgetAmount: 0, renewalType: "renew" },
+  { id: "cat_others",     name: "Others",           icon: "�", color: "#AEB6BF", budgetAmount: 0, renewalType: "renew" },
 ];
 
 /* ── Helpers ─────────────────────────────────────────── */
@@ -51,20 +38,15 @@ function _save(name, data) { localStorage.setItem(_key(name), JSON.stringify(dat
 
 function initDataForUser(uid) {
   _currentUid = uid;
-
-  // Version-based category migration:
-  // If the stored version differs from DATA_VERSION, reset categories to new
-  // defaults while keeping all transaction history intact.
-  const storedVersion = _load("dataVersion", null);
-  if (storedVersion !== DATA_VERSION) {
+  // Seed default categories if first time
+  if (!localStorage.getItem(_key("categories"))) {
     _save("categories", DEFAULT_CATEGORIES);
-    _save("dataVersion", DATA_VERSION);
-    // Clear monthlyData so carry-forward is recalculated fresh
-    _save("monthlyData", {});
   }
-
   if (!localStorage.getItem(_key("transactions"))) {
     _save("transactions", []);
+  }
+  if (!localStorage.getItem(_key("monthlyData"))) {
+    _save("monthlyData", {});
   }
   // Run month-rollover check
   checkMonthRollover();
