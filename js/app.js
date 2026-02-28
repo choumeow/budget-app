@@ -631,7 +631,7 @@ function changeLanguage(lang) {
 ───────────────────────────────────────────────────────────── */
 function formatCurrency(amount) {
   if (isNaN(amount)) amount = 0;
-  return "$" + Number(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return "RM " + Number(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function formatDateLabel(dateStr) {
