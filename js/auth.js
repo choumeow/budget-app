@@ -11,6 +11,15 @@
 ───────────────────────────────────────────────────────────── */
 let currentUser = null; // { uid, displayName, email, photoURL }
 
+function showLoadingOverlay() {
+  const el = document.getElementById("loading-overlay");
+  if (el) el.classList.remove("hidden");
+}
+function hideLoadingOverlay() {
+  const el = document.getElementById("loading-overlay");
+  if (el) el.classList.add("hidden");
+}
+
 /* ─────────────────────────────────────────────────────────────
    UI HELPERS
 ───────────────────────────────────────────────────────────── */
@@ -183,9 +192,10 @@ function initAuth() {
   }
 }
 
-function onUserSignedIn(user) {
+async function onUserSignedIn(user) {
+  showLoadingOverlay();
   currentUser = user;
-  initDataForUser(user.uid);
+  await initDataForUser(user.uid);
 
   const settings = getSettings();
   setLanguage(settings.language || "en");
@@ -205,10 +215,12 @@ function onUserSignedIn(user) {
   document.getElementById("app").classList.remove("hidden");
 
   // Navigate to transaction page (default)
+  hideLoadingOverlay();
   navigateTo("transaction");
 }
 
 function onUserSignedOut() {
+  cleanupDataListeners();
   currentUser = null;
   document.getElementById("app").classList.add("hidden");
   document.getElementById("auth-screen").classList.remove("hidden");

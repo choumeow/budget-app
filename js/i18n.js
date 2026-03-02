@@ -91,6 +91,7 @@ const TRANSLATIONS = {
     account: "Account",
     logout: "Logout",
     logoutConfirm: "Are you sure you want to logout?",
+    loading: "Loading\u2026",
 
     editRecord: "Edit Record",
     deleteRecord: "Delete this record?",
@@ -184,6 +185,7 @@ const TRANSLATIONS = {
     account: "账户",
     logout: "退出登录",
     logoutConfirm: "确定要退出登录吗？",
+    loading: "加载中\u2026",
 
     editRecord: "编辑记录",
     deleteRecord: "确定要删除这条记录吗？",

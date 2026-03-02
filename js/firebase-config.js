@@ -30,6 +30,7 @@ const firebaseConfig = {
 // Initialize Firebase (guarded in case config is not yet set)
 let firebaseApp = null;
 let firebaseAuth = null;
+let firebaseFirestore = null;
 let firebaseEnabled = false;
 
 try {
@@ -38,9 +39,10 @@ try {
     firebaseConfig.apiKey !== "YOUR_API_KEY" &&
     typeof firebase !== "undefined"
   ) {
-    firebaseApp  = firebase.initializeApp(firebaseConfig);
-    firebaseAuth = firebase.auth();
-    firebaseEnabled = true;
+    firebaseApp       = firebase.initializeApp(firebaseConfig);
+    firebaseAuth      = firebase.auth();
+    firebaseFirestore = firebase.firestore();
+    firebaseEnabled   = true;
     console.log("[Firebase] Initialized successfully.");
   } else {
     console.warn(

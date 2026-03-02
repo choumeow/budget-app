@@ -783,6 +783,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Register Firestore data-change callback so UI re-renders on remote updates
+  setDataChangeCallback(reRenderCurrentPage);
+
   // Init auth
   initAuth();
-});
+};
+
+function reRenderCurrentPage() {
+  const activePage = document.querySelector(".page:not(.hidden)");
+  if (!activePage) return;
+  const pageId = activePage.id.replace("page-", "");
+  navigateTo(pageId);
+}
