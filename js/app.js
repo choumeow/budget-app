@@ -452,7 +452,7 @@ function renderCategoryBudgetTable() {
   const cats = getCategories();
 
   if (!cats.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">${t("noCategories")}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">${t("noCategories")}</td></tr>`;
     return;
   }
 
@@ -461,7 +461,12 @@ function renderCategoryBudgetTable() {
       ? `<span class="badge badge-forward">${t("forwardOption")}</span>`
       : `<span class="badge badge-renew">${t("renewOption")}</span>`;
     return `
-      <tr>
+      <tr draggable="true" data-cat-id="${cat.id}">
+        <td class="drag-handle-cell">
+          <span class="drag-handle" title="Drag to reorder">
+            <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="9" cy="5" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1.2" fill="currentColor" stroke="none"/></svg>
+          </span>
+        </td>
         <td>
           <div class="cat-cell">
             <div class="cat-dot" style="background:${hexToRgba(cat.color, 0.18)};">${cat.icon}</div>
@@ -483,6 +488,59 @@ function renderCategoryBudgetTable() {
       </tr>
     `;
   }).join("");
+
+  initCategoryDragDrop(tbody);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DRAG-AND-DROP REORDER (category table)
+───────────────────────────────────────────────────────────── */
+function initCategoryDragDrop(tbody) {
+  let dragSrc = null;
+
+  tbody.querySelectorAll("tr[draggable]").forEach(row => {
+    row.addEventListener("dragstart", e => {
+      dragSrc = row;
+      row.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", row.dataset.catId);
+    });
+
+    row.addEventListener("dragend", () => {
+      row.classList.remove("dragging");
+      tbody.querySelectorAll("tr").forEach(r => r.classList.remove("drag-over-top", "drag-over-bottom"));
+      dragSrc = null;
+    });
+
+    row.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      if (!dragSrc || dragSrc === row) return;
+      tbody.querySelectorAll("tr").forEach(r => r.classList.remove("drag-over-top", "drag-over-bottom"));
+      const rect = row.getBoundingClientRect();
+      const mid  = rect.top + rect.height / 2;
+      row.classList.add(e.clientY < mid ? "drag-over-top" : "drag-over-bottom");
+    });
+
+    row.addEventListener("dragleave", () => {
+      row.classList.remove("drag-over-top", "drag-over-bottom");
+    });
+
+    row.addEventListener("drop", e => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === row) return;
+      tbody.querySelectorAll("tr").forEach(r => r.classList.remove("drag-over-top", "drag-over-bottom"));
+
+      const rect   = row.getBoundingClientRect();
+      const before = e.clientY < rect.top + rect.height / 2;
+      if (before) tbody.insertBefore(dragSrc, row);
+      else        tbody.insertBefore(dragSrc, row.nextSibling);
+
+      // Persist new order
+      const newOrder = [...tbody.querySelectorAll("tr[data-cat-id]")].map(r => r.dataset.catId);
+      reorderCategories(newOrder);
+    });
+  });
 }
 
 /* ─────────────────────────────────────────────────────────────

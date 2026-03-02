@@ -753,6 +753,29 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 input:checked + .toggle-slider { background: var(--accent); }
 input:checked + .toggle-slider::before { transform: translateX(20px); }
 
+/* Drag handle */
+.drag-handle-cell { width: 32px; padding: 0 4px !important; }
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: grab;
+  transition: all var(--transition);
+}
+.drag-handle:hover { background: var(--surface-2); color: var(--text-secondary); }
+.drag-handle:active { cursor: grabbing; }
+
+tr.dragging {
+  opacity: 0.45;
+  background: var(--surface-2);
+}
+tr.drag-over-top td    { border-top: 2px solid var(--accent) !important; }
+tr.drag-over-bottom td { border-bottom: 2px solid var(--accent) !important; }
+
 /* Renewal badge */
 .badge {
   display: inline-flex;

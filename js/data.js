@@ -128,6 +128,15 @@ function deleteCategory(id) {
   _save("transactions", txns);
 }
 
+function reorderCategories(idOrder) {
+  const cats    = getCategories();
+  const catMap  = Object.fromEntries(cats.map(c => [c.id, c]));
+  const reordered = idOrder.map(id => catMap[id]).filter(Boolean);
+  // Append any cats not present in idOrder (safety)
+  cats.forEach(c => { if (!idOrder.includes(c.id)) reordered.push(c); });
+  _save("categories", reordered);
+}
+
 /** When a category budget is updated mid-month, refresh the current month's budget entry */
 function updateMonthlyBudgetEntry(catId, newBase) {
   const currentMonth = yyyymm();
