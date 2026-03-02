@@ -320,10 +320,7 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   min-width: 48px;
   justify-content: center;
 }
-.amount-input-wrap input {
-  padding-left: 64px;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0 !important;
-}
+
 
 /* ═══════════════════════════════════════════════════════
    LAYOUT: MAIN APP
