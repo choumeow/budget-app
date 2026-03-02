@@ -211,14 +211,17 @@ function applyFilters() {
   renderTransactionList(txns);
 }
 
+let _allExpanded = false;
+
 function renderTransactionList(txns) {
-  const list    = document.getElementById("transaction-list");
-  const empty   = document.getElementById("transaction-empty");
+  const list  = document.getElementById("transaction-list");
+  const empty = document.getElementById("transaction-empty");
   if (!list) return;
 
   if (!txns.length) {
     list.innerHTML = "";
     empty.classList.remove("hidden");
+    syncExpandAllBtn();
     return;
   }
   empty.classList.add("hidden");
@@ -232,12 +235,55 @@ function renderTransactionList(txns) {
   });
 
   const html = Object.entries(grouped).map(([date, items]) => {
-    const label = formatDateLabel(date);
-    const rows  = items.map(txn => buildTransactionRow(txn)).join("");
-    return `<div class="date-separator">${label}</div>${rows}`;
+    const label    = formatDateLabel(date);
+    const total    = items.reduce((s, t) => s + Number(t.amount), 0);
+    const count    = items.length;
+    const rows     = items.map(txn => buildTransactionRow(txn)).join("");
+    const countTxt = count === 1 ? `1 ${currentLang === "zh" ? "笔" : "record"}` : `${count} ${currentLang === "zh" ? "笔" : "records"}`;
+    return `
+      <div class="date-group" data-date="${date}">
+        <div class="date-group-header" onclick="toggleDateGroup(this)">
+          <span class="date-group-label">${label}</span>
+          <span class="date-group-count">${countTxt}</span>
+          <span class="date-group-total">-${formatCurrency(total)}</span>
+          <span class="date-group-chevron">
+            <svg viewBox="0 0 24 24" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+          </span>
+        </div>
+        <div class="date-group-body">${rows}</div>
+      </div>`;
   }).join("");
 
   list.innerHTML = html;
+  syncExpandAllBtn();
+}
+
+function toggleDateGroup(header) {
+  const group = header.closest(".date-group");
+  group.classList.toggle("expanded");
+  syncExpandAllBtn();
+}
+
+function toggleExpandAll() {
+  const groups = document.querySelectorAll(".date-group");
+  if (!groups.length) return;
+  const anyCollapsed = [...groups].some(g => !g.classList.contains("expanded"));
+  groups.forEach(g => g.classList.toggle("expanded", anyCollapsed));
+  _allExpanded = anyCollapsed;
+  syncExpandAllBtn();
+}
+
+function syncExpandAllBtn() {
+  const btn    = document.getElementById("btn-expand-all");
+  if (!btn) return;
+  const groups = document.querySelectorAll(".date-group");
+  if (!groups.length) { btn.style.display = "none"; return; }
+  btn.style.display = "";
+  const allExpanded = [...groups].every(g => g.classList.contains("expanded"));
+  btn.textContent   = allExpanded
+    ? (currentLang === "zh" ? "收起全部" : "Collapse All")
+    : (currentLang === "zh" ? "展开全部" : "Expand All");
+  btn.dataset.expanded = allExpanded ? "1" : "0";
 }
 
 function buildTransactionRow(txn) {
