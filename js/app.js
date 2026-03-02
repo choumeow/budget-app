@@ -788,7 +788,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Init auth
   initAuth();
-};
+});
 
 function reRenderCurrentPage() {
   const activePage = document.querySelector(".page:not(.hidden)");
