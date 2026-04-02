@@ -327,42 +327,58 @@ function deleteRecord(id) {
 /* ─────────────────────────────────────────────────────────────
    PAGE 3: SUMMARY
 ───────────────────────────────────────────────────────────── */
+function populateSummaryMonths() {
+  const sel = document.getElementById("summary-period");
+  if (!sel) return;
+
+  const prevValue = sel.value;
+  const currentMonth = yyyymm(new Date());
+  const txns = getTransactions();
+
+  // Collect unique YYYY-MM from transactions
+  const monthSet = new Set();
+  txns.forEach(t => {
+    if (t.date && t.date.length >= 7) monthSet.add(t.date.substring(0, 7));
+  });
+  // Always include current month
+  monthSet.add(currentMonth);
+
+  const sortedMonths = [...monthSet].sort().reverse();
+
+  sel.innerHTML = "";
+  sortedMonths.forEach(m => {
+    const opt = document.createElement("option");
+    opt.value = m;
+    // Format label: "Apr 2026" or locale-aware
+    const [y, mo] = m.split("-");
+    const d = new Date(Number(y), Number(mo) - 1);
+    opt.textContent = d.toLocaleDateString(currentLang === "zh" ? "zh-CN" : "en-US", { year: "numeric", month: "short" });
+    sel.appendChild(opt);
+  });
+
+  // Restore previous selection or default to current month
+  sel.value = sortedMonths.includes(prevValue) ? prevValue : currentMonth;
+}
+
 function renderSummary() {
-  const period   = document.getElementById("summary-period")?.value || "monthly";
-  const now      = new Date();
-  const cats     = getCategories();
-  let   txns     = getTransactions();
+  populateSummaryMonths();
+
+  const selectedMonth = document.getElementById("summary-period")?.value || yyyymm(new Date());
+  const cats  = getCategories();
+  const txns  = getTransactions();
 
   let totalBudget = 0;
   let totalSpent  = 0;
 
-  // Filter transactions
-  let filteredTxns;
-  let months = [];   // months covered for yearly
-
-  if (period === "monthly") {
-    const month = yyyymm(now);
-    filteredTxns = txns.filter(t => t.date && t.date.startsWith(month));
-    months = [month];
-  } else {
-    const year = String(now.getFullYear());
-    filteredTxns = txns.filter(t => t.date && t.date.startsWith(year));
-    for (let m = 1; m <= 12; m++) {
-      months.push(`${year}-${String(m).padStart(2,"0")}`);
-    }
-  }
+  // Filter transactions by selected month
+  const filteredTxns = txns.filter(t => t.date && t.date.startsWith(selectedMonth));
 
   const spentByCat = getSpentByCategory(filteredTxns);
 
-  // Total budget across covered months
+  // Budget for selected month
   const budgetByCat = {};
   cats.forEach(cat => {
-    if (period === "monthly") {
-      budgetByCat[cat.id] = getEffectiveBudget(cat.id, months[0]);
-    } else {
-      // yearly: sum base budgets × 12 (simplified)
-      budgetByCat[cat.id] = cat.budgetAmount * 12;
-    }
+    budgetByCat[cat.id] = getEffectiveBudget(cat.id, selectedMonth);
     totalBudget += budgetByCat[cat.id];
     totalSpent  += spentByCat[cat.id] || 0;
   });
