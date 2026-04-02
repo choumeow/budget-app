@@ -96,6 +96,7 @@ const TRANSLATIONS = {
     editRecord: "Edit Record",
     deleteRecord: "Delete this record?",
     update: "Update",
+    editingBudgetFor: "Editing budget for {month} (current month only)",
   },
   zh: {
     appName: "预算管家",
@@ -190,6 +191,7 @@ const TRANSLATIONS = {
     editRecord: "编辑记录",
     deleteRecord: "确定要删除这条记录吗？",
     update: "更新",
+    editingBudgetFor: "正在编辑 {month} 的预算（仅限当前月份）",
   }
 };
 

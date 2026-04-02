@@ -493,6 +493,14 @@ function renderSettingsPage() {
 }
 
 function renderCategoryBudgetTable() {
+  // Show which month's budget is being edited
+  const monthLabel = document.getElementById("budget-month-label");
+  if (monthLabel) {
+    const now = new Date();
+    const monthName = now.toLocaleDateString(currentLang === "zh" ? "zh-CN" : "en-US", { month: "long", year: "numeric" });
+    monthLabel.textContent = t("editingBudgetFor").replace("{month}", monthName);
+  }
+
   const tbody = document.getElementById("category-budget-body");
   if (!tbody) return;
   const cats = getCategories();

@@ -163,6 +163,15 @@ async function checkMonthRollover() {
 async function performMonthRollover(fromMonth, toMonth) {
   const categories  = getCategories();
   const monthlyData = { ..._cache.monthlyData };
+
+  // Snapshot from-month's effective budgets so past months are frozen
+  if (!monthlyData[fromMonth]) monthlyData[fromMonth] = {};
+  categories.forEach(cat => {
+    if (!monthlyData[fromMonth][cat.id]) {
+      monthlyData[fromMonth][cat.id] = { budgetAmount: cat.budgetAmount, carryOver: 0 };
+    }
+  });
+
   categories.forEach(cat => {
     if (cat.budgetAmount <= 0) return;
     const fromData   = (monthlyData[fromMonth] || {})[cat.id] || {};
