@@ -367,7 +367,8 @@ function renderSummary() {
   const cats  = getCategories();
   const txns  = getTransactions();
 
-  let totalBudget = 0;
+  let totalBaseBudget = 0;
+  let totalBringForward = 0;
   let totalSpent  = 0;
 
   // Filter transactions by selected month
@@ -375,19 +376,35 @@ function renderSummary() {
 
   const spentByCat = getSpentByCategory(filteredTxns);
 
-  // Budget for selected month
+  // Budget for selected month (separate base budget from carry-over)
   const budgetByCat = {};
   cats.forEach(cat => {
-    budgetByCat[cat.id] = getEffectiveBudget(cat.id, selectedMonth);
-    totalBudget += budgetByCat[cat.id];
-    totalSpent  += spentByCat[cat.id] || 0;
+    const effective = getEffectiveBudget(cat.id, selectedMonth);
+    const carryOver = getMonthlyCarryOver(cat.id, selectedMonth);
+    const baseBudget = effective - carryOver;
+    budgetByCat[cat.id] = effective;
+    totalBaseBudget += baseBudget;
+    if (cat.renewalType === "forward") totalBringForward += carryOver;
+    totalSpent += spentByCat[cat.id] || 0;
   });
 
+  const totalBudget = totalBaseBudget + totalBringForward;
   const totalLeft = totalBudget - totalSpent;
 
   // Update totals
   document.getElementById("summary-total-spent").textContent  = formatCurrency(totalSpent);
-  document.getElementById("summary-total-budget").textContent = formatCurrency(totalBudget);
+  document.getElementById("summary-total-budget").textContent = formatCurrency(totalBaseBudget);
+
+  // Bring forward card
+  const bfCard = document.getElementById("summary-bf-card");
+  const bfEl   = document.getElementById("summary-total-bf");
+  if (totalBringForward > 0) {
+    bfCard.style.display = "";
+    bfEl.textContent = formatCurrency(totalBringForward);
+  } else {
+    bfCard.style.display = "none";
+  }
+
   const leftEl = document.getElementById("summary-total-left");
   leftEl.textContent = formatCurrency(Math.abs(totalLeft));
   leftEl.style.color = totalLeft < 0 ? "var(--danger)" : "var(--success)";
@@ -490,6 +507,7 @@ function renderBudgetSummaryTable(cats, budgetByCat, spentByCat) {
    PAGE 4: SETTINGS
 ───────────────────────────────────────────────────────────── */
 function renderSettingsPage() {
+  populateBudgetMonths();
   renderCategoryBudgetTable();
 
   // Apply current settings
@@ -508,14 +526,37 @@ function renderSettingsPage() {
   }
 }
 
+function populateBudgetMonths() {
+  const sel = document.getElementById("budget-month-select");
+  if (!sel) return;
+
+  const prevValue = sel.value;
+  const currentMonth = yyyymm(new Date());
+  const txns = getTransactions();
+
+  const monthSet = new Set();
+  txns.forEach(t => {
+    if (t.date && t.date.length >= 7) monthSet.add(t.date.substring(0, 7));
+  });
+  monthSet.add(currentMonth);
+
+  const sortedMonths = [...monthSet].sort().reverse();
+
+  sel.innerHTML = "";
+  sortedMonths.forEach(m => {
+    const opt = document.createElement("option");
+    opt.value = m;
+    const [y, mo] = m.split("-");
+    const d = new Date(Number(y), Number(mo) - 1);
+    opt.textContent = d.toLocaleDateString(currentLang === "zh" ? "zh-CN" : "en-US", { year: "numeric", month: "short" });
+    sel.appendChild(opt);
+  });
+
+  sel.value = sortedMonths.includes(prevValue) ? prevValue : currentMonth;
+}
+
 function renderCategoryBudgetTable() {
-  // Show which month's budget is being edited
-  const monthLabel = document.getElementById("budget-month-label");
-  if (monthLabel) {
-    const now = new Date();
-    const monthName = now.toLocaleDateString(currentLang === "zh" ? "zh-CN" : "en-US", { month: "long", year: "numeric" });
-    monthLabel.textContent = t("editingBudgetFor").replace("{month}", monthName);
-  }
+  const selectedMonth = document.getElementById("budget-month-select")?.value || yyyymm(new Date());
 
   const tbody = document.getElementById("category-budget-body");
   if (!tbody) return;
@@ -527,6 +568,7 @@ function renderCategoryBudgetTable() {
   }
 
   tbody.innerHTML = cats.map(cat => {
+    const effectiveBudget = getEffectiveBudget(cat.id, selectedMonth);
     const badge = cat.renewalType === "forward"
       ? `<span class="badge badge-forward">${t("forwardOption")}</span>`
       : `<span class="badge badge-renew">${t("renewOption")}</span>`;
@@ -543,7 +585,7 @@ function renderCategoryBudgetTable() {
             <span>${escapeHtml(cat.name)}</span>
           </div>
         </td>
-        <td>${cat.budgetAmount > 0 ? formatCurrency(cat.budgetAmount) : `<span style="color:var(--text-muted)">—</span>`}</td>
+        <td>${effectiveBudget > 0 ? formatCurrency(effectiveBudget) : `<span style="color:var(--text-muted)">—</span>`}</td>
         <td>${badge}</td>
         <td>
           <div style="display:flex;gap:4px;">
@@ -635,9 +677,12 @@ function openEditCategoryModal(id) {
   if (!cat) return;
   _editingCategoryId = id;
 
+  const selectedMonth = document.getElementById("budget-month-select")?.value || yyyymm(new Date());
+  const effectiveBudget = getEffectiveBudget(id, selectedMonth);
+
   document.getElementById("category-modal-title").textContent = t("editCategory");
   document.getElementById("cat-name").value    = cat.name;
-  document.getElementById("cat-budget").value  = cat.budgetAmount > 0 ? cat.budgetAmount : "";
+  document.getElementById("cat-budget").value  = effectiveBudget > 0 ? effectiveBudget : "";
   document.getElementById("cat-edit-id").value = id;
   document.querySelector(`input[name="renewal"][value="${cat.renewalType || "renew"}"]`).checked = true;
 
@@ -701,15 +746,39 @@ function handleSaveCategory(e) {
 
   if (!name) return;
 
-  const cat = {
-    id:           editId || generateId(),
-    name,
-    icon,
-    color,
-    budgetAmount: budget,
-    renewalType:  renewal,
-  };
-  saveCategory(cat);
+  const selectedMonth = document.getElementById("budget-month-select")?.value || yyyymm(new Date());
+  const currentMonth  = yyyymm(new Date());
+
+  if (selectedMonth === currentMonth) {
+    // Current month: update base category (existing behavior)
+    const cat = {
+      id:           editId || generateId(),
+      name,
+      icon,
+      color,
+      budgetAmount: budget,
+      renewalType:  renewal,
+    };
+    saveCategory(cat);
+  } else {
+    // Past month: update category props (except budget) + month-specific budget
+    const cat = {
+      id:           editId || generateId(),
+      name,
+      icon,
+      color,
+      renewalType:  renewal,
+    };
+    if (editId) {
+      const existing = getCategoryById(editId);
+      cat.budgetAmount = existing ? existing.budgetAmount : 0;
+    } else {
+      cat.budgetAmount = budget;
+    }
+    saveCategory(cat);
+    setMonthlyBudget(editId || cat.id, selectedMonth, budget);
+  }
+
   document.getElementById("category-modal").classList.add("hidden");
   showToast(t("categorySaved"));
   renderSettingsPage();

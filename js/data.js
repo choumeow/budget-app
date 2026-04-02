@@ -250,6 +250,23 @@ function _updateMonthlyBudgetEntry(catId, newBase) {
   } else { _lsSave("monthlyData", monthlyData); }
 }
 
+function setMonthlyBudget(catId, month, budgetAmount) {
+  const monthlyData = { ..._cache.monthlyData };
+  if (!monthlyData[month]) monthlyData[month] = {};
+  const existing  = monthlyData[month][catId] || {};
+  const carryOver = existing.carryOver || 0;
+  monthlyData[month][catId] = { budgetAmount, carryOver };
+  _cache.monthlyData = monthlyData;
+  if (_useFirestore) {
+    _metaRef("monthlyData").set({ months: monthlyData }).catch(e => console.warn(e));
+  } else { _lsSave("monthlyData", monthlyData); }
+}
+
+function getMonthlyCarryOver(catId, month) {
+  const entry = (_cache.monthlyData[month] || {})[catId];
+  return (entry && entry.carryOver) || 0;
+}
+
 /* ════════════════════════════════════════════════════════
    TRANSACTIONS
 ════════════════════════════════════════════════════════ */

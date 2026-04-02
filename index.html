@@ -269,6 +269,10 @@
             <span class="total-label" data-i18n="totalBudget">Total Budget</span>
             <span class="total-amount" id="summary-total-budget">RM0.00</span>
           </div>
+          <div class="total-card" id="summary-bf-card" style="display:none;">
+            <span class="total-label" data-i18n="bringForwardBudget">Bring Forward</span>
+            <span class="total-amount" id="summary-total-bf">RM0.00</span>
+          </div>
           <div class="total-card">
             <span class="total-label" data-i18n="totalLeft">Remaining</span>
             <span class="total-amount" id="summary-total-left">RM0.00</span>
@@ -313,7 +317,9 @@
             <h3 data-i18n="categoryBudgets">Category Budgets</h3>
             <button class="btn-primary btn-sm" onclick="openAddCategoryModal()" data-i18n="addCategory">+ Add Category</button>
           </div>
-          <p class="budget-month-label" id="budget-month-label"></p>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <select id="budget-month-select" onchange="renderCategoryBudgetTable()"></select>
+          </div>
           <div class="table-wrapper">
             <table class="budget-table">
               <thead>
