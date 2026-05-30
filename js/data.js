@@ -16,18 +16,23 @@
 
 /* ── Default Categories ──────────────────────────────── */
 const DEFAULT_CATEGORIES = [
-  { id: "cat_food",      name: "Food & Dining",  icon: "🍜", color: "#FF6B6B", budgetAmount: 0, renewalType: "renew", sortOrder: 0  },
-  { id: "cat_transport", name: "Transport",       icon: "🚗", color: "#4ECDC4", budgetAmount: 0, renewalType: "renew", sortOrder: 1  },
-  { id: "cat_shopping",  name: "Shopping",        icon: "🛍️", color: "#45B7D1", budgetAmount: 0, renewalType: "renew", sortOrder: 2  },
-  { id: "cat_entertain", name: "Entertainment",   icon: "🎬", color: "#96CEB4", budgetAmount: 0, renewalType: "renew", sortOrder: 3  },
-  { id: "cat_health",    name: "Health",          icon: "💊", color: "#FFEAA7", budgetAmount: 0, renewalType: "renew", sortOrder: 4  },
-  { id: "cat_housing",   name: "Housing",         icon: "🏠", color: "#DDA0DD", budgetAmount: 0, renewalType: "renew", sortOrder: 5  },
-  { id: "cat_utilities", name: "Utilities",       icon: "💡", color: "#98D8C8", budgetAmount: 0, renewalType: "renew", sortOrder: 6  },
-  { id: "cat_education", name: "Education",       icon: "📚", color: "#F7DC6F", budgetAmount: 0, renewalType: "renew", sortOrder: 7  },
-  { id: "cat_travel",    name: "Travel",          icon: "✈️", color: "#BB8FCE", budgetAmount: 0, renewalType: "renew", sortOrder: 8  },
-  { id: "cat_pets",      name: "Pets",            icon: "🐾", color: "#85C1E9", budgetAmount: 0, renewalType: "renew", sortOrder: 9  },
-  { id: "cat_personal",  name: "Personal Care",   icon: "💆", color: "#F1948A", budgetAmount: 0, renewalType: "renew", sortOrder: 10 },
-  { id: "cat_others",    name: "Others",          icon: "📦", color: "#AEB6BF", budgetAmount: 0, renewalType: "renew", sortOrder: 11 },
+  // Renew every month
+  { id: "cat_meal",        name: "Meal",            icon: "🍜", color: "#FF6B6B", budgetAmount: 300, renewalType: "renew",   sortOrder: 0  },
+  { id: "cat_ingredient",  name: "Ingredient",      icon: "🥗", color: "#56AB2F", budgetAmount: 200, renewalType: "renew",   sortOrder: 1  },
+  { id: "cat_transport",   name: "Transport",       icon: "🚗", color: "#4ECDC4", budgetAmount: 100, renewalType: "renew",   sortOrder: 2  },
+  { id: "cat_entertain",   name: "Entertainment",   icon: "🎬", color: "#96CEB4", budgetAmount: 200, renewalType: "renew",   sortOrder: 3  },
+  { id: "cat_rental",      name: "Rental",          icon: "🏠", color: "#DDA0DD", budgetAmount: 600, renewalType: "renew",   sortOrder: 4  },
+  { id: "cat_medicalcard", name: "Medical Card",    icon: "💳", color: "#FFEAA7", budgetAmount: 250, renewalType: "renew",   sortOrder: 5  },
+  { id: "cat_ptptn",       name: "PTPTN",           icon: "🎓", color: "#F7DC6F", budgetAmount: 200, renewalType: "renew",   sortOrder: 6  },
+  // Bring forward remaining amount to next month
+  { id: "cat_pet",         name: "Pet",             icon: "🐾", color: "#85C1E9", budgetAmount: 50,  renewalType: "forward", sortOrder: 7  },
+  { id: "cat_dailyproduct",name: "Daily Product",   icon: "🧴", color: "#98D8C8", budgetAmount: 25,  renewalType: "forward", sortOrder: 8  },
+  { id: "cat_gift",        name: "Gift",            icon: "🎁", color: "#FD79A8", budgetAmount: 130, renewalType: "forward", sortOrder: 9  },
+  { id: "cat_medical",     name: "Medical",         icon: "💊", color: "#D63031", budgetAmount: 20,  renewalType: "forward", sortOrder: 10 },
+  { id: "cat_phonebill",   name: "Phone Bill",      icon: "📱", color: "#45B7D1", budgetAmount: 15,  renewalType: "forward", sortOrder: 11 },
+  { id: "cat_cloth",       name: "Cloth",           icon: "👔", color: "#6C5CE7", budgetAmount: 30,  renewalType: "forward", sortOrder: 12 },
+  { id: "cat_makeup",      name: "Makeup Product",  icon: "💄", color: "#E84393", budgetAmount: 30,  renewalType: "forward", sortOrder: 13 },
+  { id: "cat_snack",       name: "Snack",           icon: "🍦", color: "#FF8E53", budgetAmount: 50,  renewalType: "forward", sortOrder: 14 },
 ];
 
 /* ── In-Memory Cache ─────────────────────────────────── */
@@ -177,9 +182,11 @@ async function performMonthRollover(fromMonth, toMonth) {
     const fromData   = (monthlyData[fromMonth] || {})[cat.id] || {};
     const prevBudget = fromData.budgetAmount != null ? fromData.budgetAmount : cat.budgetAmount;
     const prevSpent  = getSpentInMonth(cat.id, fromMonth);
-    const prevLeft   = Math.max(0, prevBudget - prevSpent);
     if (!monthlyData[toMonth]) monthlyData[toMonth] = {};
-    if (cat.renewalType === "forward" && prevLeft > 0) {
+    if (cat.renewalType === "forward") {
+      // Carry forward the remaining amount (can be negative).
+      // New budget = previous remaining + this month's base budget.
+      const prevLeft = prevBudget - prevSpent;
       monthlyData[toMonth][cat.id] = { budgetAmount: cat.budgetAmount + prevLeft, carryOver: prevLeft };
     } else {
       monthlyData[toMonth][cat.id] = { budgetAmount: cat.budgetAmount, carryOver: 0 };
